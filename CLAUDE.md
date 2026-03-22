@@ -21,6 +21,28 @@ The repo enforces strict separation between shared analytical tools and engine-s
   - `fixtures/` — Data generation configs and DDLs for test datasets
   - `test_plans/` — Crucible YAML test plan definitions (concurrency, workload SQL, scaling modes)
 
+## Deploying Doris
+
+```bash
+# Install (from repo root)
+helm install doris targets/doris/deploy/helm/doris -n doris --create-namespace
+
+# Override replicas or resources for a lighter dev cluster
+helm install doris targets/doris/deploy/helm/doris -n doris --create-namespace \
+  --set fe.replicaCount=1 --set be.replicaCount=1
+
+# Upgrade after values change
+helm upgrade doris targets/doris/deploy/helm/doris -n doris
+
+# Uninstall (PVCs are not deleted automatically)
+helm uninstall doris -n doris
+```
+
+The chart deploys:
+- **FE StatefulSet** — 3 replicas (1 leader + 2 followers), MySQL-compatible query on port `9030`, HTTP UI on `8030`
+- **BE StatefulSet** — 3 replicas, registers with FE automatically via `FE_SERVERS` env var
+- Headless services for stable DNS within each StatefulSet, plus a client-facing FE service
+
 ## Workflow
 
 1. **Deploy & Execute** — Provision SUTs via Helm charts in `targets/{engine}/deploy/`, run Crucible load tests defined in `test_plans/`
