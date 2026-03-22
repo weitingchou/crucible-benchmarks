@@ -1,11 +1,8 @@
 {
   "mcpServers": {
     "crucible": {
-      "type": "url",
-      "url": "https://crucible.example.com/mcp",
-      "env": {
-        "CRUCIBLE_API_KEY": "your-api-key-here"
-      }
+      "type": "http",
+      "url": "http://localhost:8001/mcp"
     }
   }
 }
