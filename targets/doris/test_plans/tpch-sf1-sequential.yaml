@@ -10,7 +10,7 @@ test_environment:
       port: 9030
       username: root
       password: ""
-  target_db: doris
+  target_db: tpch
 
 execution:
   executor: k6
