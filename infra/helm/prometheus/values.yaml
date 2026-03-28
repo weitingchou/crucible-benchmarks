@@ -25,7 +25,7 @@ retention: 15d
 
 # Doris scrape targets — must match the Doris Helm release name and namespace
 doris:
-  namespace: crucible-benchmarks
+  namespace: crucible-research
   fe:
     service: doris-doris-fe
     port: 8030

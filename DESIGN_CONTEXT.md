@@ -1,4 +1,4 @@
-# Project Overview: Crucible Benchmarks (`crucible-benchmarks`)
+# Project Overview: Crucible Research (`crucible-research`)
 This repository is the central hub for performance analysis, system evaluation, and benchmarking of the target databases tested by the Crucible platform.
 
 While this repository contains the necessary deployment scripts to spin up the Systems Under Test (SUT), its primary purpose is to host the analytical tools, Jupyter notebooks, and the final Markdown insight reports that document how these systems behave under severe load.

@@ -6,7 +6,7 @@ test_environment:
   component_spec:
     type: k8s
     cluster_info:
-      host: doris-doris-fe.crucible-benchmarks.svc.cluster.local
+      host: doris-doris-fe.crucible-research.svc.cluster.local
       port: 9030
       username: root
       password: ""

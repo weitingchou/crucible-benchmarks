@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Defaults
 SCALE_FACTOR=1
-HOST="doris-doris-fe.crucible-benchmarks.svc.cluster.local"
+HOST="doris-doris-fe.crucible-research.svc.cluster.local"
 QUERY_PORT=9030
 HTTP_PORT=8030
 USER="root"
@@ -27,7 +27,7 @@ Generate TPC-H data and load it into Apache Doris.
 
 Options:
   --scale-factor SF   TPC-H scale factor (default: 1). Common values: 1, 10, 100
-  --host HOST         Doris FE host (default: doris-doris-fe.crucible-benchmarks.svc.cluster.local)
+  --host HOST         Doris FE host (default: doris-doris-fe.crucible-research.svc.cluster.local)
   --query-port PORT   Doris FE MySQL query port (default: 9030)
   --http-port PORT    Doris FE HTTP port for STREAM LOAD (default: 8030)
   --user USER         Doris username (default: root)
