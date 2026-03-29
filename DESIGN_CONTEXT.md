@@ -1,7 +1,7 @@
 # Project Overview: Crucible Research (`crucible-research`)
 This repository is the central hub for performance analysis, system evaluation, and benchmarking of the target databases tested by the Crucible platform.
 
-While this repository contains the necessary deployment scripts to spin up the Systems Under Test (SUT), its primary purpose is to host the analytical tools, Jupyter notebooks, and the final Markdown insight reports that document how these systems behave under severe load.
+While this repository contains the necessary deployment scripts to spin up the Systems Under Test (SUT), its primary purpose is to host the analytical tools, Jupyter notebooks, and goal-driven autonomous research investigations that document how these systems behave under severe load.
 
 1. Repository Structure
 The repository enforces a strict separation between shared analytical tools and engine-specific evaluations.
@@ -12,40 +12,43 @@ The repository enforces a strict separation between shared analytical tools and 
 │   ├── requirements.txt        # Python dependencies (pandas, matplotlib, jupyter, etc.)
 │   ├── parsers/                # Scripts to parse Crucible's raw k6 CSVs or Prometheus metrics
 │   └── notebooks/              # Shared Jupyter notebooks for cross-engine visualization
-── targets/                     # Isolated folders for each System Under Test (SUT)
-│   ├── doris/                  
-│   │   ├── reports/            # Markdown files documenting insights, limits, and discoveries
-│   │   ├── deploy/             # Helm charts/IaC for reproducible environments
-│   │   ├── fixtures/           # Data generation configurations
-│   │   └── test_plans/         # Crucible YAML test plan definitions
-│   ├── trino/                  
-│   │   ├── reports/            
-│   │   ├── deploy/             
-│   │   ├── fixtures/           
-│   │   └── test_plans/         
-└── DESIGN_CONTEXT.md           # This architecture document
+├── infra/                      # Shared infrastructure deployments
+│   └── helm/prometheus/        # Prometheus for SUT metrics collection
+├── targets/                    # Isolated folders for each System Under Test (SUT)
+│   └── doris/
+│       ├── deploy/             # Helm charts/IaC for reproducible environments
+│       ├── fixtures/           # Data generation configs, DDLs, workload SQL
+│       └── research/           # Goal-driven research investigations
+│           └── {goal}/
+│               ├── goal.md     # Human-authored hypothesis and experiment design
+│               ├── plans/      # Auto-generated Crucible test plan YAMLs
+│               ├── results.yaml# Structured log of every experiment run
+│               └── report.md   # Auto-generated findings report
+├── .claude/skills/research/    # The /research skill definition
+├── CLAUDE.md
+├── DESIGN_CONTEXT.md           # This architecture document
+└── README.md
 ```
 
 2. The Analytical Workflow
 The core lifecycle of this repository follows a scientific method approach to systems testing:
-  1. Deploy & Execute (Reproducibility): Use the configurations in `deploy/`, `fixtures/`, and `test_plans/` to create a standardized baseline and hammer the target engine with Crucible.
-  2. Visualize & Explore (Discovery): Use the shared Jupyter notebooks in `/analysis/notebooks/` to ingest the raw Crucible telemetry (from S3 or Prometheus). Explore the data to find saturation points, query latencies, CPU bottlenecks, and memory leaks.
-  3. Document & Conclude (Reporting): Once an insight is discovered in the notebook, formalize the findings. Write a detailed Markdown (`.md`) report and save it in the target's `reports/` directory (e.g., `/targets/doris/reports/2026-03-doris-join-spill-analysis.md`).
+  1. Deploy & Execute (Reproducibility): Use the configurations in `deploy/` and `fixtures/` to create a standardized baseline and hammer the target engine with Crucible.
+  2. Research (Autonomous): Define a hypothesis in `research/{goal}/goal.md`, invoke `/research`, and let Claude autonomously plan experiments, submit test runs via Crucible, collect results, and produce a findings report.
+  3. Visualize & Explore (Discovery): Use the shared Jupyter notebooks in `/analysis/notebooks/` to ingest the raw Crucible telemetry (from S3 or Prometheus). Explore the data to find saturation points, query latencies, CPU bottlenecks, and memory leaks.
+  4. Document & Conclude (Reporting): Review the auto-generated `report.md` in the research goal folder. Provide feedback to iterate on gaps.
 
 3. Target Isolation (`/targets/{engine_name}/`)
-Each SUT is fully self-contained to ensure that reports and their corresponding test parameters are tightly coupled.
+Each SUT is fully self-contained to ensure that research findings and their corresponding test parameters are tightly coupled.
 
-  3.1 Insight Reports (`reports/`)
+  3.1 Research Investigations (`research/`)
     - The core deliverable of this repository.
-    - Contains Markdown files detailing specific performance investigations.
-    - Reports should link back to the specific `test_plan` YAML that generated the load and include exported charts/graphs generated by the shared Jupyter notebooks.
+    - Each investigation is self-contained in its own folder with goal, plans, results, and report together.
+    - Reports are generated automatically by the /research skill, backed by data from Crucible test runs.
+    - Test plans (Crucible YAML definitions) live inside each research goal's `plans/` subfolder, co-located with the investigation that produced them.
 
   3.2 Deployment & Configuration (`deploy/` & `fixtures/`)
     - Helm (1st Priority): Helm charts to ensure the SUT is provisioned exactly the same way every time.
-    - Fixtures: Scripts or DDLs to generate the massive datasets required to make the analysis valid.
-
-  3.3 Test Plans (`test_plans/`)
-    - Contains the strict YAML files that define the load test intent (e.g., concurrency, workload SQL paths, scaling modes).
+    - Fixtures: Scripts, DDLs, and workload SQL to generate the datasets and queries required for testing.
 
 4. Shared Analysis (`/analysis/`)
 Because Crucible normalizes execution telemetry across all targets, the analytical tooling is engine-agnostic.
