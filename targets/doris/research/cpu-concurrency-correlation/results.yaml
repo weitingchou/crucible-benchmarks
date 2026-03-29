@@ -1,0 +1,136 @@
+---
+study: cpu-concurrency-correlation
+engine: doris
+workload_id: tpch-sf1-cpu-concurrency
+executed_at: "2026-03-29T10:12:00Z"
+notes: >
+  Batch 1 (concurrent execution) failed — all 6 runs overlapped on the same cluster,
+  contaminating Prometheus metrics and crashing the BE under combined 63 VU load.
+  Batch 2 (sequential execution) produced clean, isolated data for c=1,2,4,8,16.
+  c=32 crashed the BE node (OOM / resource exhaustion on 2-CPU node).
+runs:
+  - concurrency: 1
+    plan_name: "cpu-concurrency-c1-seq"
+    run_id: "cpu-concurrency-c1-seq_20260329-1012_a0e0b0fd"
+    status: COMPLETED
+    parameters:
+      concurrency: 1
+      hold_for: "300s"
+      ramp_up: "0s"
+      queries: "TPC-H Q1-Q22"
+    results:
+      prometheus:
+        be_cpu_usage_pct: 46
+        be_cpu_user: 133
+        be_cpu_system: 10
+        cluster_qps: 11.2
+        query_latency_p95_ms: 230
+        query_latency_p99_ms: 327
+        be_active_queries: 1
+        be_load_average_1m: 3.8
+        wg_cpu_time_rate: 0.82
+    notes: "Clean baseline. CPU ~46%, QPS ~11, low latency."
+
+  - concurrency: 2
+    plan_name: "cpu-concurrency-c2-seq"
+    run_id: "cpu-concurrency-c2-seq_20260329-1018_5839f20c"
+    status: COMPLETED
+    parameters:
+      concurrency: 2
+      hold_for: "300s"
+      ramp_up: "0s"
+      queries: "TPC-H Q1-Q22"
+    results:
+      prometheus:
+        be_cpu_usage_pct: 89
+        be_cpu_user: 175
+        be_cpu_system: 13
+        cluster_qps: 13.7
+        query_latency_p95_ms: 370
+        query_latency_p99_ms: 650
+        be_active_queries: 2
+        be_load_average_1m: 4.6
+        wg_cpu_time_rate: 1.04
+    notes: "CPU nearly doubles to 89%. QPS improves ~22%. Latency increases ~60% (p95)."
+
+  - concurrency: 4
+    plan_name: "cpu-concurrency-c4-seq"
+    run_id: "cpu-concurrency-c4-seq_20260329-1024_3193d924"
+    status: COMPLETED
+    parameters:
+      concurrency: 4
+      hold_for: "300s"
+      ramp_up: "0s"
+      queries: "TPC-H Q1-Q22"
+    results:
+      prometheus:
+        be_cpu_usage_pct: 99.4
+        be_cpu_user: 186
+        be_cpu_system: 13
+        cluster_qps: 13.3
+        query_latency_p95_ms: 690
+        query_latency_p99_ms: 950
+        be_active_queries: 4
+        be_load_average_1m: 6.0
+        wg_cpu_time_rate: 1.07
+    notes: "CPU saturated at ~99.4%. QPS flat — no throughput gain. Latency nearly doubles from c=2."
+
+  - concurrency: 8
+    plan_name: "cpu-concurrency-c8-seq"
+    run_id: "cpu-concurrency-c8-seq_20260329-1030_8278bc7d"
+    status: COMPLETED
+    parameters:
+      concurrency: 8
+      hold_for: "300s"
+      ramp_up: "0s"
+      queries: "TPC-H Q1-Q22"
+    results:
+      prometheus:
+        be_cpu_usage_pct: 100
+        be_cpu_user: 186
+        be_cpu_system: 13.5
+        cluster_qps: 13.3
+        query_latency_p95_ms: 1120
+        query_latency_p99_ms: 1420
+        be_active_queries: 8
+        be_load_average_1m: 8.0
+        wg_cpu_time_rate: 1.07
+    notes: "CPU 100%. QPS unchanged. p95 crosses 1s. Load average rising sharply."
+
+  - concurrency: 16
+    plan_name: "cpu-concurrency-c16-seq"
+    run_id: "cpu-concurrency-c16-seq_20260329-1036_9f6c4011"
+    status: COMPLETED
+    parameters:
+      concurrency: 16
+      hold_for: "300s"
+      ramp_up: "0s"
+      queries: "TPC-H Q1-Q22"
+    results:
+      prometheus:
+        be_cpu_usage_pct: 100
+        be_cpu_user: 185
+        be_cpu_system: 15
+        cluster_qps: 12.5
+        query_latency_p95_ms: 2120
+        query_latency_p99_ms: 2660
+        be_active_queries: 16
+        be_load_average_1m: 10.0
+        wg_cpu_time_rate: 1.02
+    notes: "CPU 100%. QPS slightly declining. p95 > 2s. Load average 10+."
+
+  - concurrency: 32
+    plan_name: "cpu-concurrency-c32-seq"
+    run_id: "cpu-concurrency-c32-seq_20260329-1042_7f4e0913"
+    status: FAILED
+    error: "BE node crashed under load — Alive: false, pod restarted by K8s"
+    parameters:
+      concurrency: 32
+      hold_for: "300s"
+      ramp_up: "0s"
+      queries: "TPC-H Q1-Q22"
+    results: null
+    notes: >
+      32 concurrent VUs on a 2-CPU BE node caused OOM/resource exhaustion.
+      The BE process was killed, pod restarted, and FE marked it as dead.
+      This matches the batch-1 failure where combined 63 VUs also crashed the BE.

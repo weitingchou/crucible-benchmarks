@@ -1,0 +1,51 @@
+test_metadata:
+  run_label: cpu-concurrency-correlation
+
+test_environment:
+  env_type: long-lived
+  component_spec:
+    type: k8s
+    cluster_info:
+      host: doris-doris-fe.crucible-research.svc.cluster.local
+      port: 9030
+      username: root
+      password: ""
+  target_db: tpch
+  observability:
+    prometheus_sources:
+      - name: engine
+        url: "http://prometheus.crucible-research.svc.cluster.local:9090"
+        metrics:
+          - name: "be_cpu_usage_pct"
+            query: "100 - avg(rate(doris_be_cpu{job='doris-be',device='cpu',mode='idle'}[1m]))"
+          - name: "be_cpu_user"
+            query: "avg(rate(doris_be_cpu{job='doris-be',device='cpu',mode='user'}[1m]))"
+          - name: "be_cpu_system"
+            query: "avg(rate(doris_be_cpu{job='doris-be',device='cpu',mode='system'}[1m]))"
+          - name: "be_cpu_iowait"
+            query: "avg(rate(doris_be_cpu{job='doris-be',device='cpu',mode='iowait'}[1m]))"
+          - name: "cluster_qps"
+            query: "doris_fe_qps{job='doris-fe'}"
+          - name: "query_latency_p95"
+            query: "doris_fe_query_latency_ms{job='doris-fe',quantile='0.95'}"
+          - name: "query_latency_p99"
+            query: "doris_fe_query_latency_ms{job='doris-fe',quantile='0.99'}"
+          - name: "query_latency_p999"
+            query: "doris_fe_query_latency_ms{job='doris-fe',quantile='0.999'}"
+          - name: "be_active_queries"
+            query: "doris_be_query_ctx_cnt{job='doris-be'}"
+          - name: "be_load_average"
+            query: "doris_be_load_average{job='doris-be'}"
+          - name: "wg_cpu_time_rate"
+            query: "rate(doris_be_workload_group_cpu_time_sec{job='doris-be'}[1m])"
+        resolution: 15
+        max_data_points: 500
+
+execution:
+  executor: k6
+  scaling_mode: intra_node
+  concurrency: 16
+  ramp_up: "0s"
+  hold_for: "300s"
+  workload:
+    - workload_id: tpch-sf1-cpu-concurrency
