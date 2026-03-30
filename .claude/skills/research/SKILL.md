@@ -421,13 +421,26 @@ Generate `report.md` in the research goal directory with this structure:
 [2-3 sentences directly answering the hypothesis]
 
 ## Methodology
-- Engine: {name, version, resource config}
+- Engine: {name, version}
 - Dataset: {name, scale factor}
 - Queries: {which queries were tested}
 - Parameters varied: {what changed across experiments}
 - Duration per experiment: {hold_for value}
 - Run label: {goal-folder-name}
 - Prometheus metrics collected: {list of metric names}
+
+If the engine spec is constant across all experiments, describe it inline:
+- Engine config: {replicas, CPU, memory, notable flags}
+
+If the engine spec varies across experiments (e.g., scalability testing),
+list all configurations in a table:
+
+| Config | Replicas | CPU (per node) | Memory (per node) | Notes |
+|--------|----------|---------------|-------------------|-------|
+| 1x     | 1 BE     | 2 CPU         | 4Gi               | baseline |
+| 2x     | 2 BE     | 2 CPU         | 4Gi               | |
+| 4x     | 4 BE     | 2 CPU         | 4Gi               | |
+| 8x     | 8 BE     | 2 CPU         | 4Gi               | |
 
 ## Findings
 
