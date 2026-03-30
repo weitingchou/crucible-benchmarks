@@ -41,6 +41,15 @@ Doris BE horizontal scaling delivers sub-linear throughput gains: 2 BEs provide 
 | 2x | 2 | 14.0 | 1.10x | 2.0x | 55% |
 | 4x | 4 | 22.2 | 1.75x | 4.0x | 44% |
 
+```mermaid
+xychart-beta
+    title "Throughput: Actual vs Ideal Scaling"
+    x-axis ["1 BE", "2 BE", "4 BE"]
+    y-axis "QPS" 0 --> 55
+    bar [12.7, 14.0, 22.2]
+    line [12.7, 25.4, 50.8]
+```
+
 Throughput does not scale linearly with BE count. The 1x→2x step yields only a 10% QPS gain, while the 2x→4x step is much better (59% increase from 14.0 to 22.2). This suggests that at 2 BEs, the bottleneck shifts partially away from BE compute but is not fully relieved — possibly FE query planning/coordination overhead or uneven tablet distribution (78 vs 68 tablets).
 
 At 4 BEs, each BE handles only ~2 concurrent queries (vs 8 at 1x), significantly reducing per-BE contention and allowing better parallelism.
@@ -52,6 +61,15 @@ At 4 BEs, each BE handles only ~2 concurrent queries (vs 8 at 1x), significantly
 | 1x | 1 | 1,080 | 1,240 | — | — |
 | 2x | 2 | 955 | 1,105 | 12% | 11% |
 | 4x | 4 | 600 | 705 | 44% | 43% |
+
+```mermaid
+xychart-beta
+    title "Query Latency by BE Count"
+    x-axis ["1 BE", "2 BE", "4 BE"]
+    y-axis "Latency (ms)" 0 --> 1400
+    bar [1080, 955, 600]
+    bar [1240, 1105, 705]
+```
 
 While throughput scaling is disappointing, latency improvements are substantial. At 4 BEs, p99 latency drops below 710ms — nearly half the 1x baseline. This is because query fragments are distributed across more BEs, reducing per-node scan and compute time.
 
@@ -79,7 +97,18 @@ Addressing each success criterion:
   1. **FE coordination overhead** — a single FE becomes proportionally more expensive as it manages more fragments across more BEs.
   2. **Tablet distribution imbalance** — automatic rebalancing leaves an uneven tablet spread (62 vs 38 at 4x), causing some BEs to do more work than others.
 
-- **Scaling efficiency:** 55% at 2x, 44% at 4x. To achieve better scaling, consider: (a) increasing FE replicas or resources, (b) increasing concurrency beyond 8 VUs to better saturate 4 BEs, (c) ensuring more even tablet distribution.
+- **Scaling efficiency:**
+
+```mermaid
+xychart-beta
+    title "Scaling Efficiency (%)"
+    x-axis ["2 BE", "4 BE"]
+    y-axis "Efficiency %" 0 --> 100
+    bar [55, 44]
+    line [100, 100]
+```
+
+  55% at 2x, 44% at 4x. To achieve better scaling, consider: (a) increasing FE replicas or resources, (b) increasing concurrency beyond 8 VUs to better saturate 4 BEs, (c) ensuring more even tablet distribution.
 
 ## Limitations
 
