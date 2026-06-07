@@ -1,0 +1,6 @@
+apiVersion: v2
+name: trino
+description: Trino distributed SQL query engine for Crucible research
+type: application
+version: 0.1.0
+appVersion: "465"

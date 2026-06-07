@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trino.fullname" . }}-config
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+data:
+  # ─── JVM config (coordinator) ─────────────────────────────────────────────
+  jvm-coordinator.config: |
+    -server
+    -Xmx{{ .Values.coordinator.jvm.maxHeapSize }}
+    -XX:+UseG1GC
+    -XX:G1HeapRegionSize=32M
+    -XX:+ExplicitGCInvokesConcurrent
+    -XX:+ExitOnOutOfMemoryError
+    -XX:ReservedCodeCacheSize=512M
+    -Djdk.attach.allowAttachSelf=true
+
+  # ─── JVM config (worker) ──────────────────────────────────────────────────
+  jvm-worker.config: |
+    -server
+    -Xmx{{ .Values.worker.jvm.maxHeapSize }}
+    -XX:+UseG1GC
+    -XX:G1HeapRegionSize=32M
+    -XX:+ExplicitGCInvokesConcurrent
+    -XX:+ExitOnOutOfMemoryError
+    -XX:ReservedCodeCacheSize=512M
+    -Djdk.attach.allowAttachSelf=true
+
+  # ─── Trino node config (coordinator) ──────────────────────────────────────
+  config-coordinator.properties: |
+    coordinator=true
+    node-scheduler.include-coordinator=false
+    http-server.http.port=8080
+    discovery.uri=http://{{ include "trino.fullname" . }}:8080
+
+  # ─── Trino node config (worker) ───────────────────────────────────────────
+  config-worker.properties: |
+    coordinator=false
+    http-server.http.port=8080
+    discovery.uri=http://{{ include "trino.fullname" . }}:8080
+
+  # ─── Node properties ──────────────────────────────────────────────────────
+  node.properties: |
+    node.environment=production
+    node.data-dir=/data/trino
+
+  # ─── Catalog: tpch (for data generation) ──────────────────────────────────
+  tpch.properties: |
+    connector.name=tpch
+
+  # ─── Catalog: iceberg (JDBC catalog on PostgreSQL + S3 storage) ───────────
+  iceberg.properties: |
+    connector.name=iceberg
+    iceberg.catalog.type=jdbc
+    iceberg.jdbc-catalog.connection-url=jdbc:postgresql://{{ include "trino.pgHost" . }}:5432/{{ .Values.catalog.postgresql.database }}
+    iceberg.jdbc-catalog.connection-user={{ .Values.catalog.postgresql.username }}
+    iceberg.jdbc-catalog.connection-password={{ .Values.catalog.postgresql.password }}
+    iceberg.jdbc-catalog.catalog-name=iceberg
+    iceberg.jdbc-catalog.driver-class=org.postgresql.Driver
+    iceberg.jdbc-catalog.default-warehouse-dir={{ .Values.iceberg.warehousePath }}
+    iceberg.file-format=PARQUET
+    fs.native-s3.enabled=true
+    s3.region={{ .Values.s3.region }}
+    s3.path-style-access=false
+    iceberg.register-table-procedure.enabled=true

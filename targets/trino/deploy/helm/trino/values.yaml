@@ -1,0 +1,68 @@
+image:
+  repository: trinodb/trino
+  tag: "465"
+  pullPolicy: IfNotPresent
+
+# ─── Coordinator ────────────────────────────────────────────────────────────
+coordinator:
+  resources:
+    requests:
+      cpu: "500m"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  jvm:
+    maxHeapSize: "3G"
+
+# ─── Workers ────────────────────────────────────────────────────────────────
+worker:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: "500m"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  jvm:
+    maxHeapSize: "3G"
+
+# ─── Catalog: PostgreSQL for Iceberg JDBC catalog ──────────────────────────
+catalog:
+  postgresql:
+    enabled: true
+    image:
+      repository: postgres
+      tag: "16-alpine"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: 256Mi
+      limits:
+        cpu: "500m"
+        memory: 512Mi
+    storage:
+      storageClassName: "gp3"
+      size: 1Gi
+    database: iceberg
+    username: trino
+    password: trino
+
+# ─── Iceberg connector ─────────────────────────────────────────────────────
+iceberg:
+  warehousePath: "s3://claude-bot-workspace-project-crucible-storage/research/targets/trino/iceberg/"
+
+# ─── S3 access ──────────────────────────────────────────────────────────────
+s3:
+  region: "ap-southeast-1"
+  # Uses IRSA or node instance profile for credentials — no keys in values
+
+# ─── Service ────────────────────────────────────────────────────────────────
+service:
+  type: ClusterIP
+  port: 8080
+
+# ─── Global ─────────────────────────────────────────────────────────────────
+nameOverride: ""
+fullnameOverride: ""

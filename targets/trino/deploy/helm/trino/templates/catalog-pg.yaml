@@ -1,0 +1,71 @@
+{{- if .Values.catalog.postgresql.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trino.pgHost" . }}
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+    component: catalog-pg
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    {{- include "trino.labels" . | nindent 4 }}
+    component: catalog-pg
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "trino.pgHost" . }}
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+    component: catalog-pg
+spec:
+  serviceName: {{ include "trino.pgHost" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "trino.labels" . | nindent 6 }}
+      component: catalog-pg
+  template:
+    metadata:
+      labels:
+        {{- include "trino.labels" . | nindent 8 }}
+        component: catalog-pg
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.catalog.postgresql.image.repository }}:{{ .Values.catalog.postgresql.image.tag }}"
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.catalog.postgresql.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.catalog.postgresql.username | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.catalog.postgresql.password | quote }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            {{- toYaml .Values.catalog.postgresql.resources | nindent 12 }}
+          volumeMounts:
+            - name: pg-data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.catalog.postgresql.username | quote }}]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: pg-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.catalog.postgresql.storage.storageClassName }}
+        resources:
+          requests:
+            storage: {{ .Values.catalog.postgresql.storage.size }}
+{{- end }}

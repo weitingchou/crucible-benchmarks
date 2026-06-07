@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trino.fullname" . }}-coordinator
+  labels:
+    {{- include "trino.labels" . | nindent 4 }}
+    component: coordinator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "trino.labels" . | nindent 6 }}
+      component: coordinator
+  template:
+    metadata:
+      labels:
+        {{- include "trino.labels" . | nindent 8 }}
+        component: coordinator
+    spec:
+      containers:
+        - name: trino
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            {{- toYaml .Values.coordinator.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/trino/jvm.config
+              subPath: jvm-coordinator.config
+            - name: config
+              mountPath: /etc/trino/config.properties
+              subPath: config-coordinator.properties
+            - name: config
+              mountPath: /etc/trino/node.properties
+              subPath: node.properties
+            - name: config
+              mountPath: /etc/trino/catalog/tpch.properties
+              subPath: tpch.properties
+            - name: config
+              mountPath: /etc/trino/catalog/iceberg.properties
+              subPath: iceberg.properties
+          readinessProbe:
+            httpGet:
+              path: /v1/info
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /v1/info
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "trino.fullname" . }}-config
